@@ -1,0 +1,42 @@
+name: observabilidad
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: prometheus
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.retention.time=2d
+    volumes:
+    - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - prometheus-data:/prometheus
+    ports:
+    - 9090:9090
+    depends_on:
+    - node-exporter
+    - snmp-exporter
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    command:
+    - --path.rootfs=/host
+    volumes:
+    - /:/host:ro
+    pid: host
+    ports:
+    - 9100:9100
+  snmpsim:
+    image: tandrup/snmpsim
+    container_name: snmpsim
+    volumes:
+    - ./snmp/data:/usr/local/snmpsim/data:ro
+    ports:
+    - 1161:161/udp
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.26.0
+    container_name: snmp-exporter
+    ports:
+    - 9116:9116
+    depends_on:
+    - snmpsim
+volumes:
+  prometheus-data: null
