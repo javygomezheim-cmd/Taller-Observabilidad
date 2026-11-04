@@ -1,0 +1,46 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Log JSON simulado de un servicio cloud. Ejemplo de línea:
+  # {"timestamp":"2026-11-03T14:05:01.123456Z","severity":"ERROR","service":"cloud-api","region":"sa-east-1","message":"timeout conectando a S3","request_id":"a1b2c3"}
+  - job_name: cloud-logs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: cloud-logs
+          __path__: /logs/cloud.log
+    pipeline_stages:
+      # 1) Parsear el JSON y extraer campos a la "extracted map"
+      - json:
+          expressions:
+            level: severity
+            ts: timestamp
+            service: service
+      # 2) Normalizar: ERROR -> error (consistencia de etiquetas)
+      - template:
+          source: level
+          template: '{{ ToLower .Value }}'
+      # 3) Indexar SOLO level y service como etiquetas (baja cardinalidad)
+      - labels:
+          level:
+          service:
+      # 4) Usar el timestamp del log, no el de lectura
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+
+  # Logs del sistema operativo del host
+  - job_name: system-logs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: varlogs
+          __path__: /var/log/*log

@@ -38,5 +38,35 @@ services:
     - 9116:9116
     depends_on:
     - snmpsim
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+    - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+    - loki-data:/loki
+    ports:
+    - 3100:3100
+  log-generator:
+    image: python:3.12-alpine
+    container_name: log-generator
+    command: python /app/loggen.py
+    volumes:
+    - ./loggen:/app:ro
+    - ./logs:/logs
+  promtail:
+    image: grafana/promtail:3.2.1
+    container_name: promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+    - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+    - ./logs:/logs:ro
+    - /var/log:/var/log:ro
+    - promtail-positions:/tmp
+    depends_on:
+    - loki
+    - log-generator
 volumes:
   prometheus-data: null
+  loki-data: null
+  promtail-positions: null
