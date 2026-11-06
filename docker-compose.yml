@@ -18,6 +18,65 @@ services:
     networks:
     - snmp-net
     restart: unless-stopped
+  snmp_exporter:
+    image: prom/snmp-exporter:latest
+    container_name: snmp_exporter
+    ports:
+    - 9116:9116
+    networks:
+      snmp-net:
+        ipv4_address: 172.21.0.11
+    restart: unless-stopped
+  router_sim:
+    image: towsos_net-snmp
+    container_name: router_sim
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+    - 161:161/udp
+    networks:
+      snmp-net:
+        ipv4_address: 172.21.0.12
+    volumes:
+    - ./snmpd.conf:/usr/local/etc/snmp/snmpd.conf
+    restart: unless-stopped
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    ports:
+    - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+    - snmp-net
+    restart: unless-stopped
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+    - /var/log:/var/log:ro
+    - ./promtail-config.yml:/etc/promtail/config.yml
+    - ./cloud-logs:/var/cloud-logs:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+    - snmp-net
+    depends_on:
+    - loki
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    ports:
+    - 3000:3000
+    environment:
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+    - snmp-net
+    depends_on:
+    - loki
+    - prometheus
+    restart: unless-stopped
 networks:
   snmp-net:
     ipam:
