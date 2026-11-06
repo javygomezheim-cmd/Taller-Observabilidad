@@ -18,6 +18,29 @@ services:
     networks:
     - snmp-net
     restart: unless-stopped
+  snmp_exporter:
+    image: prom/snmp-exporter:latest
+    container_name: snmp_exporter
+    ports:
+    - 9116:9116
+    networks:
+      snmp-net:
+        ipv4_address: 172.21.0.11
+    restart: unless-stopped
+  router_sim:
+    image: towsos_net-snmp
+    container_name: router_sim
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+    - 161:161/udp
+    networks:
+      snmp-net:
+        ipv4_address: 172.21.0.12
+    volumes:
+    - ./snmpd.conf:/usr/local/etc/snmp/snmpd.conf
+    restart: unless-stopped
 networks:
   snmp-net:
     ipam:
