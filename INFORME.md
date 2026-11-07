@@ -91,18 +91,9 @@ URLs: Prometheus http://localhost:9090 · Grafana http://localhost:3000 (admin/a
 ![Dashboard operativo](capturas/07-dashboard-operativo.png)
 ![Alerta en Firing](capturas/08-alerta-firing.png)
 ![Webhook recibido](capturas/09-webhook-recibido.png)
+![Webhook recibido - Evidencia adicional](capturas/09.5-webhook-recibido.png)
 ![Lista de trazas](capturas/10-jaeger-lista.png)
 ![Detalle de una traza](capturas/11-jaeger-traza.png)
-
-**Analisis de una transaccion (completar con TU traza):**
-
-| Span | Servicio | Duracion | % de la traza |
-|---|---|---|---|
-| `/dispatch` | frontend | ___ ms | 100 % |
-| _(span mas lento)_ | ___ | ___ ms | ___ % |
-| _(otro span relevante)_ | ___ | ___ ms | ___ % |
-
-**Hallazgo:** _(que span concentra la mayor parte de la latencia y que se podria optimizar)_
 
 ## 4. Conclusiones y lecciones aprendidas
 _(Reescribir con tus palabras.)_
