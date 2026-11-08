@@ -1,0 +1,95 @@
+# Provisioning de Grafana Alerting exportado desde Grafana 10.2.2
+# (API /api/v1/provisioning/.../export?format=yaml).
+# Contiene: regla "Alerta CPU", contact point webhook y política de notificación.
+# Importación: Alerting > Alert rules > More > Import, o copiar a grafana/provisioning/alerting/.
+# Requiere la carpeta "Alerts" y el datasource Prometheus con el mismo uid
+# (si el uid es distinto, cambiar datasourceUid en refId A).
+# La URL del webhook es un endpoint de prueba de webhook.site: reemplazar por uno propio.
+
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: CPU
+      folder: Alerts
+      interval: 1m
+      rules:
+        - uid: a39d340d-deae-43e8-a608-ee8ac8eae42f
+          title: Alerta CPU
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: a9d66c6b-6928-411a-8cca-d0d170df709a
+              model:
+                datasource:
+                    type: prometheus
+                    uid: a9d66c6b-6928-411a-8cca-d0d170df709a
+                expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)
+                instant: true
+                intervalMs: 1000
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: B
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: B
+                settings:
+                    mode: dropNN
+                type: reduce
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 5
+                        type: gt
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 1m
+          annotations: {}
+          labels: {}
+          isPaused: false
+contactPoints:
+    - orgId: 1
+      name: Alerta-Webhook
+      receivers:
+        - uid: e7b91d6d-8913-43e6-bc6d-dd53d91df66b
+          type: webhook
+          settings:
+            httpMethod: POST
+            url: https://webhook.site/8771d2ad-fef8-465a-99f8-9944b4d370e8
+          disableResolveMessage: false
+policies:
+    - orgId: 1
+      receiver: Alerta-Webhook
+      group_by:
+        - grafana_folder
+        - alertname
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 4h
